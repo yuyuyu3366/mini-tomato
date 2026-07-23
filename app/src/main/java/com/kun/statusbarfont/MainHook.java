@@ -113,43 +113,4 @@ public class MainHook implements IXposedHookLoadPackage {
         }
         return null;
     }
-}                customTypeface = Typeface.createFromFile(fontFile);
-            } catch (Throwable t) {
-                Log.e(TAG, "字体加载失败: " + FONT_PATH, t);
-                return;
-            }
-        }
-
-        XposedHelpers.findAndHookMethod(Paint.class, "setTypeface", Typeface.class,
-                new XC_MethodHook() {
-                    @Override
-                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                        String hitClass = findMatchingCaller();
-
-                        if (DEBUG) {
-                            if (hitClass != null) {
-                                Log.i(TAG, "命中关键词类: " + hitClass);
-                            }
-                            return;
-                        }
-
-                        if (hitClass != null) {
-                            param.args[0] = customTypeface;
-                        }
-                    }
-                });
-    }
-
-    private String findMatchingCaller() {
-        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-        for (StackTraceElement element : stack) {
-            String className = element.getClassName();
-            for (String keyword : KEYWORDS) {
-                if (className.contains(keyword)) {
-                    return className;
-                }
-            }
-        }
-        return null;
-    }
 }
