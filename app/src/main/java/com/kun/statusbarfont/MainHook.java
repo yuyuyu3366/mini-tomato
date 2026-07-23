@@ -2,7 +2,6 @@ package com.kun.statusbarfont;
 
 import android.graphics.Paint;
 import android.graphics.Typeface;
-import android.graphics.fonts.FontVariationAxis;
 import android.util.Log;
 import android.widget.TextView;
 
@@ -92,10 +91,7 @@ public class MainHook implements IXposedHookLoadPackage {
                     TextView clockView = (TextView) param.thisObject;
                     Typeface base = clockView.getTypeface();
                     try {
-                        FontVariationAxis[] axes = { new FontVariationAxis("wght", 600f) };
-                        Typeface weighted = new Typeface.Builder(base)
-                                .setFontVariationSettings(axes)
-                                .build();
+                        Typeface weighted = Typeface.create(base, 600, false);
                         clockView.setTypeface(weighted);
                     } catch (Throwable t) {
                         Log.e(TAG, "font weight set failed", t);
