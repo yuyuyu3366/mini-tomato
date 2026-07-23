@@ -16,9 +16,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 public class MainHook implements IXposedHookLoadPackage {
 
     private static final String TAG = "StatusBarFont";
-
     private static final String FONT_PATH = "/data/local/tmp/statusbar_5g.ttf";
-
     private static final boolean DEBUG = true;
 
     private static final String[] KEYWORDS = {
@@ -40,20 +38,28 @@ public class MainHook implements IXposedHookLoadPackage {
             return;
         }
 
-        if (!DEBUG) {
-            File fontFile = new File(FONT_PATH);
-            if (!fontFile.exists()) {
-                Log.e(TAG, "字体文件不存在: " + FONT_PATH);
-                return;
-            }
-            try {
-                customTypeface = Typeface.createFromFile(fontFile);
-            } catch (Throwable t) {
-                Log.e(TAG, "字体加载失败: " + FONT_PATH, t);
-                return;
-            }
-        }
+        loadCustomFont();
+        hookFivegFont();
+        hookClockFontWeight(lpparam);
+    }
 
+    private void loadCustomFont() {
+        if (DEBUG) {
+            return;
+        }
+        File fontFile = new File(FONT_PATH);
+        if (!fontFile.exists()) {
+            Log.e(TAG, "字体文件不存在: " + FONT_PATH);
+            return;
+        }
+        try {
+            customTypeface = Typeface.createFromFile(fontFile);
+        } catch (Throwable t) {
+            Log.e(TAG, "字体加载失败: " + FONT_PATH, t);
+        }
+    }
+
+    private void hookFivegFont() {
         XposedHelpers.findAndHookMethod(Paint.class, "setTypeface", Typeface.class,
                 new XC_MethodHook() {
                     @Override
@@ -67,13 +73,14 @@ public class MainHook implements IXposedHookLoadPackage {
                             return;
                         }
 
-                        if (hitClass != null) {
+                        if (hitClass != null && customTypeface != null) {
                             param.args[0] = customTypeface;
                         }
                     }
                 });
+    }
 
-        // ↓↓↓ 新增:状态栏时钟字重 hook ↓↓↓
+    private void hookClockFontWeight(LoadPackageParam lpparam) {
         try {
             Class<?> clockClass = XposedHelpers.findClass(
                     "com.android.systemui.statusbar.policy.Clock", lpparam.classLoader);
@@ -98,7 +105,6 @@ public class MainHook implements IXposedHookLoadPackage {
         } catch (Throwable t) {
             Log.e(TAG, "Clock class not found", t);
         }
-        // ↑↑↑ 新增部分结束 ↑↑↑
     }
 
     private String findMatchingCaller() {
@@ -113,4 +119,4 @@ public class MainHook implements IXposedHookLoadPackage {
         }
         return null;
     }
-                                        }
+}
