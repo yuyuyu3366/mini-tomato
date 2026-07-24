@@ -5,21 +5,25 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.XResources;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.util.Log;
+import android.util.TypedValue;
 import android.widget.TextView;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
 
+import de.robv.android.xposed.IXposedHookInitPackageResources;
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.XposedHelpers;
+import de.robv.android.xposed.callbacks.XC_InitPackageResources.InitPackageResourcesParam;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
-public class MainHook implements IXposedHookLoadPackage {
+public class MainHook implements IXposedHookLoadPackage, IXposedHookInitPackageResources {
 
     private static final String TAG = "StatusBarFont";
     private static final String FONT_PATH = "/data/local/tmp/statusbar_5g.ttf";
@@ -45,6 +49,15 @@ public class MainHook implements IXposedHookLoadPackage {
         hookFivegFont();
         hookClockFontWeight(lpparam);
         hookApplicationForReceiver();
+    }
+
+    @Override
+    public void handleInitPackageResources(InitPackageResourcesParam resparam) throws Throwable {
+        if (!"com.android.systemui".equals(resparam.packageName)) {
+            return;
+        }
+        resparam.res.setReplacement("com.android.systemui", "dimen", "status_bar_height",
+                new XResources.DimensionReplacement(28, TypedValue.COMPLEX_UNIT_DIP));
     }
 
     private void loadSavedWeight() {
