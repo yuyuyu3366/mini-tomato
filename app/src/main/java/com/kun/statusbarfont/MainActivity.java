@@ -1,23 +1,62 @@
 package com.kun.statusbarfont;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 public class MainActivity extends Activity {
+
+    public static final String PREFS_NAME = "font_settings";
+    public static final String KEY_WEIGHT = "clock_weight";
+    public static final String ACTION_UPDATE_WEIGHT = "com.kun.statusbarfont.ACTION_UPDATE_WEIGHT";
+    public static final String EXTRA_WEIGHT = "weight";
+
+    private TextView valueText;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        TextView tv = new TextView(this);
-        tv.setText("在 LSPosed 里启用本模块并勾选 System UI 作用域，然后重启 System UI 或重启手机。\n\n"
-                + "调试步骤：\n"
-                + "1. 保持代码里 DEBUG = true，编译安装并启用\n"
-                + "2. 重启后执行 adb logcat | grep StatusBarFont\n"
-                + "3. 切换到 5G 网络，观察打印出的类名\n"
-                + "4. 把命中的类名填进 KEYWORDS，FONT_PATH 改成你的字体路径\n"
-                + "5. 把 DEBUG 改成 false，重新编译安装");
-        tv.setPadding(32, 64, 32, 32);
-        tv.setTextIsSelectable(true);
-        setContentView(tv);
+        setContentView(R.layout.activity_main);
+
+        SeekBar seekBar = findViewById(R.id.seekBarWeight);
+        valueText = findViewById(R.id.textWeightValue);
+
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        int savedWeight = prefs.getInt(KEY_WEIGHT, 600);
+
+        seekBar.setProgress(savedWeight - 100);
+        valueText.setText("当前粗细: " + savedWeight);
+
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int weight = progress + 100;
+                valueText.setText("当前粗细: " + weight);
+                if (fromUser) {
+                    sendWeightBroadcast(weight);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                int weight = seekBar.getProgress() + 100;
+                SharedPreferences.Editor editor = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
+                editor.putInt(KEY_WEIGHT, weight);
+                editor.apply();
+            }
+        });
+    }
+
+    private void sendWeightBroadcast(int weight) {
+        Intent intent = new Intent(ACTION_UPDATE_WEIGHT);
+        intent.setPackage("com.android.systemui");
+        intent.putExtra(EXTRA_WEIGHT, weight);
+        sendBroadcast(intent);
     }
 }
